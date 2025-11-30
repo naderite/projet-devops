@@ -35,21 +35,20 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            environment {
-                SONAR_HOST_URL = 'https://your-sonarqube-url'
-            }
-            steps {
-                withSonarQubeEnv('SonarQubeServer') {
-                    sh """
-                       mvn sonar:sonar \
-                       -Dsonar.projectKey=your_project_key \
-                       -Dsonar.host.url=$SONAR_HOST_URL \
-                       -Dsonar.login=$SONARQUBE_ENV
-                    """
-                }
-            }
-        }
+stage('SonarQube Analysis') {
+  steps {
+    // the name here must match exactly the "Name" of your SonarQube server
+    withSonarQubeEnv('sonarQube_server') {
+      // Running Maven with SonarQube analysis
+      sh """
+        mvn clean verify sonar:sonar \
+          -Dsonar.projectKey=projetdevops \
+          -Dsonar.host.url=$SONAR_HOST_URL \
+          -Dsonar.login=$SONAR_AUTH_TOKEN
+      """
+    }
+  }
+}
 
         stage('Quality Gate') {
             steps {
