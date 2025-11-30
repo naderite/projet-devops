@@ -35,20 +35,15 @@ pipeline {
             }
         }
 
-stage('SonarQube Analysis') {
-  steps {
-    // the name here must match exactly the "Name" of your SonarQube server
-    withSonarQubeEnv('sonarQube_server') {
-      // Running Maven with SonarQube analysis
-      sh """
-        mvn clean verify sonar:sonar \
-          -Dsonar.projectKey=projetdevops \
-          -Dsonar.host.url=$SONAR_HOST_URL \
-          -Dsonar.login=$SONAR_AUTH_TOKEN
-      """
+
+    stage('SonarQube Analysis') {
+      steps {
+        withSonarQubeEnv('sonarQube_server') {
+          // Use injected env variables
+          sh 'mvn clean verify sonar:sonar'
+        }
+      }
     }
-  }
-}
 
         stage('Quality Gate') {
             steps {
