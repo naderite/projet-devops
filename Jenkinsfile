@@ -38,7 +38,7 @@ pipeline {
 
     stage('SonarQube Analysis') {
       steps {
-        withSonarQubeEnv('sonarQube_server') {
+        withSonarQubeEnv('sonar_server') {
           // Use injected env variables
           sh 'mvn clean verify sonar:sonar'
         }
