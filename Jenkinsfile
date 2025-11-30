@@ -35,15 +35,16 @@ pipeline {
             }
         }
 
-
-    stage('SonarQube Analysis') {
-      steps {
-        withSonarQubeEnv('sonar_server') {
-          // Use injected env variables
-          sh 'mvn clean verify sonar:sonar'
-        }
-      }
-    }
+stage('SonarQube Analysis (hard-coded token)') {
+  steps {
+    sh """
+      mvn clean verify sonar:sonar \
+        -Dsonar.projectKey=projetdevops \
+        -Dsonar.host.url=http://localhost:9000 \
+        -Dsonar.login=sqa_3db0d9a3db4cda782af931dcde6678f99843cfe0
+    """
+  }
+}
 
         stage('Quality Gate') {
             steps {
