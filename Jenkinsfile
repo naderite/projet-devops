@@ -11,7 +11,15 @@ pipeline {
     }
 
     stages {
-
+      stage('Print env / tool info (debug)') {
+            steps {
+                echo "=== Debug: Java & Maven versions and environment ==="
+                sh 'java -version'
+                sh 'javac -version'
+                sh 'mvn -v'
+                sh 'printenv'
+            }
+        }
         stage('Checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/naderite/projet-devops.git'
