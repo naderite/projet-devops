@@ -35,15 +35,10 @@ pipeline {
             }
         }
 
+withSonarQubeEnv('SonarQube_jenkins') {
+    sh 'sonar-scanner'
+}
 
-    stage('SonarQube Analysis') {
-      steps {
-        withSonarQubeEnv('SonarQube_jenkins') {
-          // Use injected env variables
-          sh 'mvn clean verify sonar:sonar'
-        }
-      }
-    }
 
         stage('Quality Gate') {
             steps {
