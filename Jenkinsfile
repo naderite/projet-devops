@@ -7,7 +7,7 @@ pipeline {
     }
 
     environment {
-        SONARQUBE_ENV = credentials('sonarqube-token-id')
+        SONARQUBE_ENV = credentials('SonarQube_jenkins') // fixed ID
     }
 
     stages {
@@ -35,10 +35,13 @@ pipeline {
             }
         }
 
-withSonarQubeEnv('SonarQube_jenkins') {
-    sh 'sonar-scanner'
-}
-
+        stage('SonarQube Analysis') {  // ✅ must be a stage
+            steps {
+                withSonarQubeEnv('SonarQube_jenkins') {
+                    sh 'sonar-scanner'
+                }
+            }
+        }
 
         stage('Quality Gate') {
             steps {
@@ -60,3 +63,4 @@ withSonarQubeEnv('SonarQube_jenkins') {
         }
     }
 }
+    
