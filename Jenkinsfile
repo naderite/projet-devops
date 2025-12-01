@@ -23,6 +23,9 @@ pipeline {
         // Docker configuration
         DOCKER_IMAGE = 'naderite/eventsproject'
         DOCKER_TAG = "${BUILD_NUMBER}"
+        
+        // Auto-incrementing version: 1.0.BUILD_NUMBER
+        RELEASE_VERSION = "1.0.${BUILD_NUMBER}"
     }
 
     stages {
@@ -170,13 +173,15 @@ set -euo pipefail
 # Extract artifact info from pom.xml
 GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout)
 ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
-VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
 PACKAGING=$(mvn help:evaluate -Dexpression=project.packaging -q -DforceStdout)
+
+# Use auto-incrementing version from Jenkins build number
+VERSION="${RELEASE_VERSION}"
 
 # Find the JAR file
 JAR_FILE=$(ls target/*.jar | grep -v original | head -n1)
 
-echo "Deploying ${GROUP_ID}:${ARTIFACT_ID}:${VERSION} to Nexus..."
+echo "Deploying ${GROUP_ID}:${ARTIFACT_ID}:${VERSION} to Nexus (${NEXUS_REPOSITORY})..."
 
 # Convert groupId dots to slashes for Nexus path
 GROUP_PATH=$(echo "${GROUP_ID}" | tr '.' '/')
