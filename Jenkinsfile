@@ -55,10 +55,10 @@ pipeline {
             post {
                 always {
                     junit '**/target/surefire-reports/*.xml'
-                    // Publish JaCoCo coverage report
-                    jacoco execPattern: '**/target/jacoco.exec',
-                           classPattern: '**/target/classes',
-                           sourcePattern: '**/src/main/java'
+                    // Archive JaCoCo coverage reports (HTML and XML)
+                    // Note: Install the JaCoCo Jenkins plugin to enable the 'jacoco' step for interactive coverage reports
+                    sh 'mvn jacoco:report || true'
+                    archiveArtifacts artifacts: 'target/site/jacoco/**/*', allowEmptyArchive: true
                 }
             }
         }
