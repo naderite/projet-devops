@@ -12,7 +12,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "PBFA97CFB590B2093"
             },
             "fieldConfig": {
                 "defaults": {
@@ -86,7 +86,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "prometheus"
+                        "uid": "PBFA97CFB590B2093"
                     },
                     "expr": "rate(container_cpu_usage_seconds_total{name=~\"eventsproject.*\"}[5m]) * 100",
                     "legendFormat": "{{name}}",
@@ -99,7 +99,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "PBFA97CFB590B2093"
             },
             "fieldConfig": {
                 "defaults": {
@@ -173,7 +173,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "prometheus"
+                        "uid": "PBFA97CFB590B2093"
                     },
                     "expr": "container_memory_usage_bytes{name=~\"eventsproject.*\"}",
                     "legendFormat": "{{name}}",
@@ -186,7 +186,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "PBFA97CFB590B2093"
             },
             "fieldConfig": {
                 "defaults": {
@@ -260,7 +260,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "prometheus"
+                        "uid": "PBFA97CFB590B2093"
                     },
                     "expr": "rate(container_network_receive_bytes_total{name=~\"eventsproject.*\"}[5m])",
                     "legendFormat": "{{name}} - RX",
@@ -269,7 +269,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "prometheus"
+                        "uid": "PBFA97CFB590B2093"
                     },
                     "expr": "rate(container_network_transmit_bytes_total{name=~\"eventsproject.*\"}[5m])",
                     "legendFormat": "{{name}} - TX",
@@ -282,7 +282,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "PBFA97CFB590B2093"
             },
             "fieldConfig": {
                 "defaults": {
@@ -348,7 +348,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "prometheus"
+                        "uid": "PBFA97CFB590B2093"
                     },
                     "expr": "up{job=\"spring-boot-app\"}",
                     "legendFormat": "Spring Boot App",
@@ -357,7 +357,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "prometheus"
+                        "uid": "PBFA97CFB590B2093"
                     },
                     "expr": "up{job=\"cadvisor\"}",
                     "legendFormat": "cAdvisor",
@@ -366,7 +366,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "prometheus"
+                        "uid": "PBFA97CFB590B2093"
                     },
                     "expr": "up{job=\"node-exporter\"}",
                     "legendFormat": "Node Exporter",
@@ -379,7 +379,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "PBFA97CFB590B2093"
             },
             "fieldConfig": {
                 "defaults": {
@@ -453,7 +453,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "prometheus"
+                        "uid": "PBFA97CFB590B2093"
                     },
                     "expr": "rate(http_server_requests_seconds_count{job=\"spring-boot-app\"}[5m])",
                     "legendFormat": "{{uri}} - {{method}}",
@@ -466,7 +466,7 @@
         {
             "datasource": {
                 "type": "prometheus",
-                "uid": "prometheus"
+                "uid": "PBFA97CFB590B2093"
             },
             "fieldConfig": {
                 "defaults": {
@@ -540,7 +540,7 @@
                 {
                     "datasource": {
                         "type": "prometheus",
-                        "uid": "prometheus"
+                        "uid": "PBFA97CFB590B2093"
                     },
                     "expr": "jvm_memory_used_bytes{job=\"spring-boot-app\"}",
                     "legendFormat": "{{area}} - {{id}}",
