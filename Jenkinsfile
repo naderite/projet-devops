@@ -13,6 +13,15 @@ pipeline {
         // Replace the placeholder below with your SonarQube server URL or set this value
         // in Jenkins global environment variables. Example: 'https://sonar.mycompany.com'
         SONAR_HOST_URL = 'http://localhost:9000'
+        
+        // Nexus configuration
+        NEXUS_URL = 'http://localhost:8081'
+        NEXUS_REPOSITORY = 'maven-releases'
+        NEXUS_CREDENTIAL_ID = 'nexus-credentials'
+        
+        // Docker configuration
+        DOCKER_IMAGE = 'naderite/eventsproject'
+        DOCKER_TAG = "${BUILD_NUMBER}"
     }
 
     stages {
@@ -133,6 +142,64 @@ echo "Quality Gate passed!"
             post {
                 success {
                     archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                }
+            }
+        }
+
+        stage('Deploy to Nexus') {
+            steps {
+                echo "Deploying artifact to Nexus repository..."
+                withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIAL_ID}", usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
+                    sh '''#!/bin/bash
+set -euo pipefail
+
+# Extract artifact info from pom.xml
+GROUP_ID=$(mvn help:evaluate -Dexpression=project.groupId -q -DforceStdout)
+ARTIFACT_ID=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
+VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+PACKAGING=$(mvn help:evaluate -Dexpression=project.packaging -q -DforceStdout)
+
+# Find the JAR file
+JAR_FILE=$(ls target/*.jar | grep -v original | head -n1)
+
+echo "Deploying ${GROUP_ID}:${ARTIFACT_ID}:${VERSION} to Nexus..."
+
+# Deploy to Nexus using curl
+curl -v -u "${NEXUS_USER}:${NEXUS_PASS}" \
+    --upload-file "${JAR_FILE}" \
+    "${NEXUS_URL}/repository/${NEXUS_REPOSITORY}/${GROUP_ID//./\\/}/${ARTIFACT_ID}/${VERSION}/${ARTIFACT_ID}-${VERSION}.${PACKAGING}"
+
+echo "Artifact deployed successfully to Nexus!"
+'''
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                echo "Building Docker image..."
+                sh """
+                    docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} .
+                    docker tag ${DOCKER_IMAGE}:${DOCKER_TAG} ${DOCKER_IMAGE}:latest
+                """
+            }
+        }
+
+        stage('Push to DockerHub') {
+            steps {
+                echo "Pushing Docker image to DockerHub..."
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''#!/bin/bash
+set -euo pipefail
+
+echo "${DOCKER_PASS}" | docker login -u "${DOCKER_USER}" --password-stdin
+
+docker push ${DOCKER_IMAGE}:${DOCKER_TAG}
+
+docker logout
+
+echo "Docker images pushed successfully!"
+'''
                 }
             }
         }
