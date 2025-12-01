@@ -38,7 +38,7 @@ public class EventServicesImpl implements IEventServices {
     public Event addAffectEvenParticipant(Event event, int idParticipant) {
         Participant participant = participantRepository.findById(idParticipant)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "Participant not found: " + idParticipant));
+                        String.format("Participant not found: %d", idParticipant)));
 
         if (participant.getEvents() == null) {
             Set<Event> events = new HashSet<>();
@@ -71,7 +71,7 @@ public class EventServicesImpl implements IEventServices {
         for (Participant aParticipant : participants) {
             Participant participant = participantRepository.findById(aParticipant.getIdPart())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                            "Participant not found: " + aParticipant.getIdPart()));
+                            String.format("Participant not found: %d", aParticipant.getIdPart())));
 
             if (participant.getEvents() == null) {
                 Set<Event> events = new HashSet<>();
@@ -89,7 +89,7 @@ public class EventServicesImpl implements IEventServices {
         Event event = eventRepository.findFirstByDescription(descriptionEvent);
         if (event == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Event not found with description: " + descriptionEvent);
+                    String.format("Event not found with description: %s", descriptionEvent));
         }
 
         // Save logistics first to avoid TransientObjectException, then associate to
