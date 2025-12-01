@@ -1,6 +1,7 @@
 package tn.fst.eventsproject.entities;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 import java.io.Serializable;
@@ -15,13 +16,14 @@ import java.util.Set;
 @Entity
 public class Event implements Serializable {
     @Id
-    @GeneratedValue (strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     int idEvent;
     String description;
     LocalDate dateDebut;
     LocalDate dateFin;
     float cout;
     @ManyToMany(mappedBy = "events")
+    @JsonIgnore
     Set<Participant> participants;
     @OneToMany(fetch = FetchType.EAGER)
     Set<Logistics> logistics;

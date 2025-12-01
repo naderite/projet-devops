@@ -16,7 +16,7 @@ pipeline {
         
         // Nexus configuration
         NEXUS_URL = 'http://localhost:8081'
-        NEXUS_REPOSITORY = 'maven-snapshots'
+        NEXUS_REPOSITORY = 'maven-releases'
         NEXUS_USER = 'admin'
         NEXUS_PASS = 'admin'
         
