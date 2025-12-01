@@ -245,7 +245,7 @@ else
 fi
 
 # Verify Prometheus is running
-PROM_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9090/-/healthy || echo "000")
+PROM_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9091/-/healthy || echo "000")
 if [ "$PROM_HEALTH" = "200" ]; then
     echo "✓ Prometheus is healthy!"
 else
@@ -263,9 +263,9 @@ fi
 echo ""
 echo "=== Deployment Complete ==="
 echo "Application URL: http://localhost:8089/events"
-echo "Prometheus URL: http://localhost:9090"
+echo "Prometheus URL: http://localhost:9091"
 echo "Grafana URL: http://localhost:3000 (admin/admin)"
-echo "cAdvisor URL: http://localhost:8080"
+echo "cAdvisor URL: http://localhost:8081"
 '''
             }
         }
@@ -279,9 +279,9 @@ All stages passed. Your application is now deployed with monitoring.
 
 Access points:
 - Application: http://localhost:8089/events
-- Prometheus: http://localhost:9090
+- Prometheus: http://localhost:9091
 - Grafana: http://localhost:3000 (admin/admin)
-- cAdvisor: http://localhost:8080
+- cAdvisor: http://localhost:8081
 '''
         }
         failure {
