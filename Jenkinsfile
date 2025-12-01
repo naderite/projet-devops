@@ -17,7 +17,8 @@ pipeline {
         // Nexus configuration
         NEXUS_URL = 'http://localhost:8081'
         NEXUS_REPOSITORY = 'maven-releases'
-        NEXUS_CREDENTIAL_ID = 'nexus-credentials'
+        NEXUS_USER = 'admin'
+        NEXUS_PASS = '900a8c43-c5c9-48c5-a996-7ff2572ec1e0'
         
         // Docker configuration
         DOCKER_IMAGE = 'naderite/eventsproject'
@@ -149,8 +150,7 @@ echo "Quality Gate passed!"
         stage('Deploy to Nexus') {
             steps {
                 echo "Deploying artifact to Nexus repository..."
-                withCredentials([usernamePassword(credentialsId: "${NEXUS_CREDENTIAL_ID}", usernameVariable: 'NEXUS_USER', passwordVariable: 'NEXUS_PASS')]) {
-                    sh '''#!/bin/bash
+                sh '''#!/bin/bash
 set -euo pipefail
 
 # Extract artifact info from pom.xml
@@ -164,14 +164,16 @@ JAR_FILE=$(ls target/*.jar | grep -v original | head -n1)
 
 echo "Deploying ${GROUP_ID}:${ARTIFACT_ID}:${VERSION} to Nexus..."
 
+# Convert groupId dots to slashes for Nexus path
+GROUP_PATH=$(echo "${GROUP_ID}" | tr '.' '/')
+
 # Deploy to Nexus using curl
 curl -v -u "${NEXUS_USER}:${NEXUS_PASS}" \
     --upload-file "${JAR_FILE}" \
-    "${NEXUS_URL}/repository/${NEXUS_REPOSITORY}/${GROUP_ID//./\\/}/${ARTIFACT_ID}/${VERSION}/${ARTIFACT_ID}-${VERSION}.${PACKAGING}"
+    "${NEXUS_URL}/repository/${NEXUS_REPOSITORY}/${GROUP_PATH}/${ARTIFACT_ID}/${VERSION}/${ARTIFACT_ID}-${VERSION}.${PACKAGING}"
 
 echo "Artifact deployed successfully to Nexus!"
 '''
-                }
             }
         }
 
