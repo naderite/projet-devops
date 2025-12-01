@@ -135,6 +135,13 @@ echo "Quality gate status: ${QG_STATUS}"
 if [ "${QG_STATUS}" != "OK" ]; then
     echo "Quality Gate did not pass: ${QG_STATUS}"
     echo "$QG_JSON"
+    
+    # Get detailed issues information
+    echo ""
+    echo "=== Fetching detailed issues ==="
+    ISSUES_JSON=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST}/api/issues/search?componentKeys=tn.esprit:eventsProject&resolved=false&ps=20")
+    echo "$ISSUES_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); [print(f'- {i.get(\"component\",\"?\").split(\":\")[-1]}:{i.get(\"line\",\"?\")} - {i.get(\"message\",\"?\")}') for i in d.get('issues',[])]" 2>/dev/null || echo "$ISSUES_JSON"
+    
     exit 1
 fi
 echo "Quality Gate passed!"
