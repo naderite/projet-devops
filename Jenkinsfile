@@ -9,8 +9,19 @@ pipeline {
         maven 'Maven3'
     }
 
+    // Sonar: two common options:
+    // A) Configure a SonarQube installation in Jenkins (Manage Jenkins → Global Tool Configuration)
+    //    and call `withSonarQubeEnv('your-installation-name')` (this is the existing approach
+    //    but it requires the installation name to exist in Jenkins which caused the error).
+    // B) (Preferred here) Don't rely on a Jenkins tool installation. Use Maven's Sonar goal and
+    //    pass the Sonar host URL and a secret token from Jenkins credentials. This works even
+    //    when Jenkins has no SonarQube installation configured.
     environment {
-        SONARQUBE_ENV = credentials('SonarQube_jenkins') // fixed ID
+        // Replace the placeholder below with your SonarQube server URL or set this value
+        // in Jenkins global environment variables. Example: 'https://sonar.mycompany.com'
+        SONAR_HOST_URL = 'http://localhost:9000/'
+        // Note: the SONAR_TOKEN is expected to be a Jenkins "Secret text" credential with id
+        // 'SONAR_TOKEN'. We'll read it with `withCredentials` in the Sonar stage.
     }
 
     stages {
@@ -46,10 +57,12 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {  // ✅ must be a stage
+        stage('SonarQube Analysis') {  // use maven sonar:sonar with a token (no Jenkins Sonar tool required)
             steps {
-                withSonarQubeEnv('SonarQube_jenkins') {
-                    sh 'sonar-scanner'
+                // Bind a secret text credential (create a Secret Text credential in Jenkins with id 'SonarQube_jenkins')
+                withCredentials([string(credentialsId: 'SonarQube_jenkins', variable: 'SonarQube_jenkins')]) {
+                    // Run Sonar via Maven plugin. This avoids depending on a configured SonarQube installation in Jenkins.
+                    sh "mvn -B sonar:sonar -Dsonar.host.url=${env.SONAR_HOST_URL} -Dsonar.login=${SonarQube_jenkins}"
                 }
             }
         }
