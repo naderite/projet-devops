@@ -55,6 +55,10 @@ pipeline {
             post {
                 always {
                     junit '**/target/surefire-reports/*.xml'
+                    // Publish JaCoCo coverage report
+                    jacoco execPattern: '**/target/jacoco.exec',
+                           classPattern: '**/target/classes',
+                           sourcePattern: '**/src/main/java'
                 }
             }
         }
@@ -67,7 +71,10 @@ pipeline {
 set -euo pipefail
 
 echo "Running Maven Sonar analysis..."
-mvn -B sonar:sonar -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_TOKEN} 2>&1 | tee sonar-output.txt
+mvn -B sonar:sonar \
+    -Dsonar.host.url=${SONAR_HOST_URL} \
+    -Dsonar.login=${SONAR_TOKEN} \
+    -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml 2>&1 | tee sonar-output.txt
 
 # Extract the CE task URL from scanner output
 TASK_ID=$(grep -o "api/ce/task?id=[A-Za-z0-9_-]*" sonar-output.txt | head -n1 | cut -d= -f2) || true
