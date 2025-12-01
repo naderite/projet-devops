@@ -9,23 +9,14 @@ pipeline {
         maven 'Maven3'
     }
 
-    // Sonar: two common options:
-    // A) Configure a SonarQube installation in Jenkins (Manage Jenkins → Global Tool Configuration)
-    //    and call `withSonarQubeEnv('your-installation-name')` (this is the existing approach
-    //    but it requires the installation name to exist in Jenkins which caused the error).
-    // B) (Preferred here) Don't rely on a Jenkins tool installation. Use Maven's Sonar goal and
-    //    pass the Sonar host URL and a secret token from Jenkins credentials. This works even
-    //    when Jenkins has no SonarQube installation configured.
     environment {
         // Replace the placeholder below with your SonarQube server URL or set this value
         // in Jenkins global environment variables. Example: 'https://sonar.mycompany.com'
-        SONAR_HOST_URL = 'http://localhost:9000/'
-        // Note: the SONAR_TOKEN is expected to be a Jenkins "Secret text" credential with id
-        // 'SONAR_TOKEN'. We'll read it with `withCredentials` in the Sonar stage.
+        SONAR_HOST_URL = 'http://localhost:9000'
     }
 
     stages {
-      stage('Print env / tool info (debug)') {
+        stage('Print env / tool info (debug)') {
             steps {
                 echo "=== Debug: Java & Maven versions and environment ==="
                 sh 'java -version'
@@ -34,6 +25,7 @@ pipeline {
                 sh 'printenv'
             }
         }
+
         stage('Checkout') {
             steps {
                 git branch: 'main', url: 'https://github.com/naderite/projet-devops.git'
@@ -42,13 +34,13 @@ pipeline {
 
         stage('Build with Maven') {
             steps {
-                sh "mvn -B clean compile"
+                sh 'mvn -B clean compile'
             }
         }
 
         stage('Unit Tests (with mocks)') {
             steps {
-                sh "mvn -B test -DskipTests=false"
+                sh 'mvn -B test'
             }
             post {
                 always {
@@ -57,69 +49,90 @@ pipeline {
             }
         }
 
-                stage('SonarQube Analysis') {  // run mvn sonar:sonar, capture CE task, poll Sonar and check quality gate via API
-                        steps {
-                                // Bind a secret text credential (create a Secret Text credential in Jenkins with id 'SonarQube_jenkins')
-                                withCredentials([string(credentialsId: 'SonarQube_jenkins', variable: 'SONAR_TOKEN')]) {
-                                        sh '''#!/bin/bash
+        stage('SonarQube Analysis') {
+            steps {
+                // Bind a secret text credential (create a Secret Text credential in Jenkins with id 'SonarQube_jenkins')
+                withCredentials([string(credentialsId: 'SonarQube_jenkins', variable: 'SONAR_TOKEN')]) {
+                    sh '''#!/bin/bash
 set -euo pipefail
-echo "Running Maven Sonar analysis and capturing output..."
-# run sonar and tee output so we can extract the CE task id
-mvn -B sonar:sonar -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_TOKEN} 2>&1 | tee sonar-output.txt
 
-# try to extract the CE task id from scanner output
-TASK_ID=$(grep -oE 'api/ce/task\?id=[A-Za-z0-9_-]+' sonar-output.txt | head -n1 | sed 's/.*id=//') || true
+echo "Running Maven Sonar analysis..."
+mvn -B sonar:sonar \
+    -Dsonar.host.url=${SONAR_HOST_URL} \
+    -Dsonar.login=${SONAR_TOKEN} \
+    2>&1 | tee sonar-output.txt
+
+# Extract the CE task URL from scanner output
+# Example line: More about the report processing at http://localhost:9000/api/ce/task?id=AZOxyz123
+TASK_ID=$(grep -o 'api/ce/task?id=[A-Za-z0-9_-]*' sonar-output.txt | head -n1 | sed 's/.*id=//') || true
+
 if [ -z "${TASK_ID}" ]; then
-    echo "ERROR: Could not find Sonar CE task id in mvn output. Full output:" >&2
-    tail -n +1 sonar-output.txt >&2
+    echo "ERROR: Could not find Sonar CE task id in mvn output."
+    cat sonar-output.txt
     exit 1
 fi
 echo "Found CE task id: ${TASK_ID}"
 
-# poll CE task until it's finished
-CE_STATUS=""
+# Remove trailing slash from SONAR_HOST_URL if present
 SONAR_HOST="${SONAR_HOST_URL%/}"
-while true; do
-    CE_JSON=$(curl -s -u ${SONAR_TOKEN}: "${SONAR_HOST}/api/ce/task?id=${TASK_ID}")
-    CE_STATUS=$(echo "$CE_JSON" | grep -oP '"status":"\K[^"]+') || true
-    echo "CE status: ${CE_STATUS}"
+
+# Poll CE task until it's finished (max ~2 minutes)
+MAX_ATTEMPTS=40
+ATTEMPT=0
+CE_STATUS=""
+
+while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
+    ATTEMPT=$((ATTEMPT + 1))
+    CE_JSON=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST}/api/ce/task?id=${TASK_ID}")
+    
+    # Extract status using sed (more portable than grep -P)
+    CE_STATUS=$(echo "$CE_JSON" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p' | head -n1)
+    echo "CE status (attempt ${ATTEMPT}/${MAX_ATTEMPTS}): ${CE_STATUS}"
+    
     if [ "${CE_STATUS}" = "SUCCESS" ]; then
         break
     fi
     if [ "${CE_STATUS}" = "FAILED" ] || [ "${CE_STATUS}" = "CANCELED" ]; then
-        echo "ERROR: CE task finished with status ${CE_STATUS}" >&2
-        echo "$CE_JSON" >&2
+        echo "ERROR: CE task finished with status ${CE_STATUS}"
+        echo "$CE_JSON"
         exit 1
     fi
     sleep 3
 done
 
-# get analysisId for quality gate check
-ANALYSIS_ID=$(echo "$CE_JSON" | grep -oP '"analysisId":"\K[^"]+' || true)
+if [ "${CE_STATUS}" != "SUCCESS" ]; then
+    echo "ERROR: Timed out waiting for Sonar analysis to complete"
+    exit 1
+fi
+
+# Extract analysisId using sed
+ANALYSIS_ID=$(echo "$CE_JSON" | sed -n 's/.*"analysisId":"\([^"]*\)".*/\1/p' | head -n1)
 if [ -z "${ANALYSIS_ID}" ]; then
-    echo "ERROR: no analysisId available from CE task response" >&2
+    echo "ERROR: no analysisId available from CE task response"
+    echo "$CE_JSON"
     exit 1
 fi
 echo "Analysis id: ${ANALYSIS_ID}"
 
-# query quality gate for the analysis
-QG_JSON=$(curl -s -u ${SONAR_TOKEN}: "${SONAR_HOST}/api/qualitygates/project_status?analysisId=${ANALYSIS_ID}")
-QG_STATUS=$(echo "$QG_JSON" | grep -oP '"status":"\K[^"]+' || true)
+# Query quality gate for the analysis
+QG_JSON=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST}/api/qualitygates/project_status?analysisId=${ANALYSIS_ID}")
+QG_STATUS=$(echo "$QG_JSON" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p' | head -n1)
 echo "Quality gate status: ${QG_STATUS}"
+
 if [ "${QG_STATUS}" != "OK" ]; then
-    echo "Quality Gate did not pass: ${QG_STATUS}" >&2
-    echo "$QG_JSON" >&2
+    echo "Quality Gate did not pass: ${QG_STATUS}"
+    echo "$QG_JSON"
     exit 1
 fi
-echo "Quality Gate passed: ${QG_STATUS}"
+echo "Quality Gate passed!"
 '''
-                                }
-                        }
                 }
+            }
+        }
 
         stage('Package') {
             steps {
-                sh "mvn -B package"
+                sh 'mvn -B package -DskipTests'
             }
             post {
                 success {
