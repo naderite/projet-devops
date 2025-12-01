@@ -18,7 +18,7 @@ pipeline {
         NEXUS_URL = 'http://localhost:8081'
         NEXUS_REPOSITORY = 'maven-snapshots'
         NEXUS_USER = 'admin'
-        NEXUS_PASS = '900a8c43-c5c9-48c5-a996-7ff2572ec1e0'
+        NEXUS_PASS = 'admin'
         
         // Docker configuration
         DOCKER_IMAGE = 'naderite/eventsproject'
