@@ -2,7 +2,10 @@ pipeline {
     agent any
 
     tools {
-        jdk 'JDK8'
+        // Project uses Spring Boot 3.x and compiles with Java 21 locally.
+        // Update this tool name to a JDK installation available in your Jenkins (e.g. 'JDK21').
+        // If your Jenkins only provides a different name for JDK 21 (or 17), change it accordingly.
+        jdk 'JDK21'
         maven 'Maven3'
     }
 
@@ -34,7 +37,7 @@ pipeline {
 
         stage('Unit Tests (with mocks)') {
             steps {
-                sh "mvn -B test"
+                sh "mvn -B test -DskipTests=false"
             }
             post {
                 always {
