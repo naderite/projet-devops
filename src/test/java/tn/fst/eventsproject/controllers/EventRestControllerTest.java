@@ -24,6 +24,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * Slice (WebMvc) tests for
+ * {@link tn.fst.eventsproject.controllers.EventRestController}.
+ *
+ * <p>
+ * These tests use Spring's {@code @WebMvcTest} with Mockito-backed
+ * {@code @MockBean} for the service layer so the controller is exercised in
+ * isolation. Each test contains a short Given/When/Then description.
+ * </p>
+ */
 @WebMvcTest(EventRestController.class)
 class EventRestControllerTest {
 
@@ -37,6 +47,12 @@ class EventRestControllerTest {
     IEventServices eventServices;
 
     @Test
+    /**
+     * Given: a Participant payload
+     * When: POST /event/addPart is invoked
+     * Then: the controller delegates to eventServices.addParticipant and
+     * returns the saved participant JSON with HTTP 200.
+     */
     void addParticipant_returnsSavedParticipant() throws Exception {
         Participant toSave = new Participant();
         toSave.setNom("Doe");
@@ -57,6 +73,11 @@ class EventRestControllerTest {
     }
 
     @Test
+    /**
+     * Given: an Event payload and a participant id in the URL
+     * When: POST /event/addEvent/{id} is invoked
+     * Then: the controller returns the saved Event JSON with HTTP 200.
+     */
     void addEventWithParticipantId_returnsEvent() throws Exception {
         Event event = new Event();
         event.setDescription("Workshop");
@@ -75,6 +96,12 @@ class EventRestControllerTest {
     }
 
     @Test
+    /**
+     * Given: an Event payload without participant id
+     * When: POST /event/addEvent is invoked
+     * Then: the controller delegates to the service and returns the saved
+     * Event JSON with HTTP 200.
+     */
     void addEvent_returnsEvent() throws Exception {
         Event event = new Event();
         event.setDescription("Conference");
@@ -93,6 +120,11 @@ class EventRestControllerTest {
     }
 
     @Test
+    /**
+     * Given: a Logistics payload and an event description in the path
+     * When: PUT /event/addAffectLog/{description} is invoked
+     * Then: the controller returns the saved Logistics JSON with HTTP 200.
+     */
     void addAffectLog_returnsLogistics() throws Exception {
         Logistics logistics = new Logistics();
         logistics.setDescription("Projector");
@@ -117,6 +149,12 @@ class EventRestControllerTest {
     }
 
     @Test
+    /**
+     * Given: a date range
+     * When: GET /event/getLogs/{start}/{end} is invoked
+     * Then: the controller returns a JSON list of reserved logistics and HTTP
+     * 200.
+     */
     void getLogistiquesDates_returnsLogisticsList() throws Exception {
         Logistics log1 = new Logistics();
         log1.setIdLog(1);

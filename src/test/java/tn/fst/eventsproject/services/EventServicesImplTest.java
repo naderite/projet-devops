@@ -23,6 +23,16 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
+/**
+ * Unit tests for {@link tn.fst.eventsproject.services.EventServicesImpl}.
+ *
+ * <p>
+ * These tests use Mockito to mock the repository dependencies (EventRepository,
+ * ParticipantRepository, LogisticsRepository) and verify the business logic of
+ * the service layer in isolation. Each test follows a simple Given/When/Then
+ * structure mentioned in the method-level comments.
+ * </p>
+ */
 @ExtendWith(MockitoExtension.class)
 class EventServicesImplTest {
 
@@ -43,6 +53,12 @@ class EventServicesImplTest {
     }
 
     @Test
+    /**
+     * Given: a new Participant without id
+     * When: addParticipant is called
+     * Then: repository.save(...) should be invoked and the returned participant
+     * should contain the id assigned by the repository.
+     */
     void addParticipant_delegatesToRepository() {
         Participant p = new Participant();
         p.setNom("Alice");
@@ -59,6 +75,12 @@ class EventServicesImplTest {
     }
 
     @Test
+    /**
+     * Given: an existing participant id and a new Event
+     * When: addAffectEvenParticipant(event, id) is called
+     * Then: the event is linked and saved through the repository
+     * and the returned event reflects the saved values.
+     */
     void addAffectEvenParticipant_withId_addsEventAndSaves() {
         Participant existing = new Participant();
         existing.setIdPart(7);
@@ -77,6 +99,11 @@ class EventServicesImplTest {
     }
 
     @Test
+    /**
+     * Given: participantRepository.findById(...) returns empty
+     * When: addAffectEvenParticipant(event, id) is called with a missing id
+     * Then: a ResponseStatusException is thrown.
+     */
     void addAffectEvenParticipant_withId_participantNotFound_throwsException() {
         when(participantRepository.findById(anyInt())).thenReturn(Optional.empty());
 
@@ -89,6 +116,12 @@ class EventServicesImplTest {
     }
 
     @Test
+    /**
+     * Given: a participant that already has events
+     * When: adding an event with addAffectEvenParticipant(event, id)
+     * Then: the new event is added to the participant's event set and the
+     * eventRepository.save(...) is invoked.
+     */
     void addAffectEvenParticipant_withId_existingEvents_addsToSet() {
         Participant existing = new Participant();
         existing.setIdPart(7);
@@ -109,6 +142,11 @@ class EventServicesImplTest {
     }
 
     @Test
+    /**
+     * Given: an Event with no participants (null)
+     * When: addAffectEvenParticipant(event) is called
+     * Then: the event is saved via eventRepository.
+     */
     void addAffectEvenParticipant_withoutId_noParticipants_savesEvent() {
         Event event = new Event();
         event.setDescription("E3");
@@ -123,6 +161,11 @@ class EventServicesImplTest {
     }
 
     @Test
+    /**
+     * Given: an Event with an empty participants set
+     * When: addAffectEvenParticipant(event) is called
+     * Then: the event is saved and no exceptions occur.
+     */
     void addAffectEvenParticipant_withoutId_emptyParticipants_savesEvent() {
         Event event = new Event();
         event.setDescription("E4");
@@ -137,6 +180,12 @@ class EventServicesImplTest {
     }
 
     @Test
+    /**
+     * Given: an Event containing participants (by id)
+     * When: addAffectEvenParticipant(event) is called
+     * Then: repository lookups link the existing participants and the
+     * event is saved.
+     */
     void addAffectEvenParticipant_withoutId_withParticipants_linksAndSaves() {
         Participant p1 = new Participant();
         p1.setIdPart(1);
@@ -165,6 +214,11 @@ class EventServicesImplTest {
     }
 
     @Test
+    /**
+     * Given: a participant who already has events
+     * When: addAffectEvenParticipant(event) uses that participant
+     * Then: the participant's events set contains the new event.
+     */
     void addAffectEvenParticipant_withoutId_participantWithExistingEvents_addsToSet() {
         Participant p1 = new Participant();
         p1.setIdPart(1);
@@ -190,6 +244,12 @@ class EventServicesImplTest {
     }
 
     @Test
+    /**
+     * Given: event participants reference a non-existent participant id
+     * When: addAffectEvenParticipant(event) is called
+     * Then: a ResponseStatusException is thrown to indicate the missing
+     * participant.
+     */
     void addAffectEvenParticipant_withoutId_participantNotFound_throwsException() {
         Participant p1 = new Participant();
         p1.setIdPart(999);
@@ -209,6 +269,12 @@ class EventServicesImplTest {
     }
 
     @Test
+    /**
+     * Given: an Event found by description and a new Logistics
+     * When: addAffectLog(logistics, description) is called
+     * Then: logisticsRepository.save(...) and eventRepository.save(...) are
+     * invoked and the event contains the saved logistics.
+     */
     void addAffectLog_eventFound_savesAndLinksLogistics() {
         Event event = new Event();
         event.setDescription("TestEvent");
@@ -235,6 +301,12 @@ class EventServicesImplTest {
     }
 
     @Test
+    /**
+     * Given: an Event that already has logistics in its set
+     * When: addAffectLog(newLogistics, description) is called
+     * Then: the new logistics is added to the event's set and the size
+     * reflects the addition.
+     */
     void addAffectLog_eventWithExistingLogistics_addsToSet() {
         Logistics existingLogistics = new Logistics();
         existingLogistics.setIdLog(1);
@@ -264,6 +336,11 @@ class EventServicesImplTest {
     }
 
     @Test
+    /**
+     * Given: eventRepository.findFirstByDescription returns null
+     * When: addAffectLog(logistics, description) is called
+     * Then: a ResponseStatusException is thrown.
+     */
     void addAffectLog_eventNotFound_throwsException() {
         when(eventRepository.findFirstByDescription("NonExistent")).thenReturn(null);
 
@@ -275,6 +352,11 @@ class EventServicesImplTest {
     }
 
     @Test
+    /**
+     * Given: no events in the date range
+     * When: getLogisticsDates(start, end) is called
+     * Then: an empty list is returned.
+     */
     void getLogisticsDates_noEvents_returnsEmptyList() {
         LocalDate start = LocalDate.of(2025, 1, 1);
         LocalDate end = LocalDate.of(2025, 12, 31);
@@ -287,6 +369,11 @@ class EventServicesImplTest {
     }
 
     @Test
+    /**
+     * Given: events with null logistics
+     * When: getLogisticsDates(start, end) is called
+     * Then: an empty list is returned.
+     */
     void getLogisticsDates_eventsWithNoLogistics_returnsEmptyList() {
         LocalDate start = LocalDate.of(2025, 1, 1);
         LocalDate end = LocalDate.of(2025, 12, 31);
@@ -302,6 +389,11 @@ class EventServicesImplTest {
     }
 
     @Test
+    /**
+     * Given: events with empty logistics sets
+     * When: getLogisticsDates(start, end) is called
+     * Then: an empty list is returned.
+     */
     void getLogisticsDates_eventsWithEmptyLogistics_returnsEmptyList() {
         LocalDate start = LocalDate.of(2025, 1, 1);
         LocalDate end = LocalDate.of(2025, 12, 31);
@@ -317,6 +409,11 @@ class EventServicesImplTest {
     }
 
     @Test
+    /**
+     * Given: events with both reserved and not-reserved logistics
+     * When: getLogisticsDates(start, end) is called
+     * Then: only reserved logistics are returned.
+     */
     void getLogisticsDates_eventsWithReservedLogistics_returnsOnlyReserved() {
         LocalDate start = LocalDate.of(2025, 1, 1);
         LocalDate end = LocalDate.of(2025, 12, 31);
@@ -345,6 +442,11 @@ class EventServicesImplTest {
     }
 
     @Test
+    /**
+     * Given: no events matching the selector
+     * When: calculCout() is called
+     * Then: no save operations should be invoked on the repository.
+     */
     void calculCout_noEvents_doesNothing() {
         when(eventRepository.findByParticipants_NomAndParticipants_PrenomAndParticipants_Tache(
                 "Tounsi", "Ahmed", Tache.ORGANISATEUR)).thenReturn(new ArrayList<>());
@@ -355,6 +457,12 @@ class EventServicesImplTest {
     }
 
     @Test
+    /**
+     * Given: an event with null logistics
+     * When: calculCout() is called
+     * Then: the event's cost is set to 0 and eventRepository.save(...) is
+     * called.
+     */
     void calculCout_eventWithNoLogistics_setsCoutToZero() {
         Event event = new Event();
         event.setDescription("Test");
@@ -371,6 +479,12 @@ class EventServicesImplTest {
     }
 
     @Test
+    /**
+     * Given: an event with reserved and non-reserved logistics
+     * When: calculCout() is called
+     * Then: only reserved logistics contribute to the event cost and the
+     * result is saved.
+     */
     void calculCout_eventWithReservedLogistics_calculatesCost() {
         Logistics reserved = new Logistics();
         reserved.setReserve(true);
