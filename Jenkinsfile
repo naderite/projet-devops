@@ -16,7 +16,7 @@ pipeline {
         
         // Nexus configuration
         NEXUS_URL = 'http://localhost:8081'
-        NEXUS_REPOSITORY = 'maven-releases'
+        NEXUS_REPOSITORY = 'maven-snapshots'
         NEXUS_USER = 'admin'
         NEXUS_PASS = '900a8c43-c5c9-48c5-a996-7ff2572ec1e0'
         
@@ -167,12 +167,19 @@ echo "Deploying ${GROUP_ID}:${ARTIFACT_ID}:${VERSION} to Nexus..."
 # Convert groupId dots to slashes for Nexus path
 GROUP_PATH=$(echo "${GROUP_ID}" | tr '.' '/')
 
-# Deploy to Nexus using curl
-curl -v -u "${NEXUS_USER}:${NEXUS_PASS}" \
+# Deploy to Nexus using curl (fail on HTTP errors)
+HTTP_CODE=$(curl -s -o /tmp/nexus-response.txt -w "%{http_code}" \
+    -u "${NEXUS_USER}:${NEXUS_PASS}" \
     --upload-file "${JAR_FILE}" \
-    "${NEXUS_URL}/repository/${NEXUS_REPOSITORY}/${GROUP_PATH}/${ARTIFACT_ID}/${VERSION}/${ARTIFACT_ID}-${VERSION}.${PACKAGING}"
+    "${NEXUS_URL}/repository/${NEXUS_REPOSITORY}/${GROUP_PATH}/${ARTIFACT_ID}/${VERSION}/${ARTIFACT_ID}-${VERSION}.${PACKAGING}")
 
-echo "Artifact deployed successfully to Nexus!"
+if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+    echo "Artifact deployed successfully to Nexus! (HTTP $HTTP_CODE)"
+else
+    echo "ERROR: Failed to deploy to Nexus (HTTP $HTTP_CODE)"
+    cat /tmp/nexus-response.txt
+    exit 1
+fi
 '''
             }
         }
