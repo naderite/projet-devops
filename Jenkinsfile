@@ -57,14 +57,10 @@ pipeline {
 set -euo pipefail
 
 echo "Running Maven Sonar analysis..."
-mvn -B sonar:sonar \
-    -Dsonar.host.url=${SONAR_HOST_URL} \
-    -Dsonar.login=${SONAR_TOKEN} \
-    2>&1 | tee sonar-output.txt
+mvn -B sonar:sonar -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.login=${SONAR_TOKEN} 2>&1 | tee sonar-output.txt
 
 # Extract the CE task URL from scanner output
-# Example line: More about the report processing at http://localhost:9000/api/ce/task?id=AZOxyz123
-TASK_ID=$(grep -o 'api/ce/task?id=[A-Za-z0-9_-]*' sonar-output.txt | head -n1 | sed 's/.*id=//') || true
+TASK_ID=$(grep -o "api/ce/task?id=[A-Za-z0-9_-]*" sonar-output.txt | head -n1 | cut -d= -f2) || true
 
 if [ -z "${TASK_ID}" ]; then
     echo "ERROR: Could not find Sonar CE task id in mvn output."
@@ -76,7 +72,7 @@ echo "Found CE task id: ${TASK_ID}"
 # Remove trailing slash from SONAR_HOST_URL if present
 SONAR_HOST="${SONAR_HOST_URL%/}"
 
-# Poll CE task until it's finished (max ~2 minutes)
+# Poll CE task until it is finished (max ~2 minutes)
 MAX_ATTEMPTS=40
 ATTEMPT=0
 CE_STATUS=""
@@ -85,8 +81,8 @@ while [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
     ATTEMPT=$((ATTEMPT + 1))
     CE_JSON=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST}/api/ce/task?id=${TASK_ID}")
     
-    # Extract status using sed (more portable than grep -P)
-    CE_STATUS=$(echo "$CE_JSON" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p' | head -n1)
+    # Extract status using grep and cut (no backslashes needed)
+    CE_STATUS=$(echo "$CE_JSON" | grep -o '"status":"[^"]*"' | head -n1 | cut -d: -f2 | tr -d '"')
     echo "CE status (attempt ${ATTEMPT}/${MAX_ATTEMPTS}): ${CE_STATUS}"
     
     if [ "${CE_STATUS}" = "SUCCESS" ]; then
@@ -105,8 +101,8 @@ if [ "${CE_STATUS}" != "SUCCESS" ]; then
     exit 1
 fi
 
-# Extract analysisId using sed
-ANALYSIS_ID=$(echo "$CE_JSON" | sed -n 's/.*"analysisId":"\([^"]*\)".*/\1/p' | head -n1)
+# Extract analysisId using grep and cut
+ANALYSIS_ID=$(echo "$CE_JSON" | grep -o '"analysisId":"[^"]*"' | head -n1 | cut -d: -f2 | tr -d '"')
 if [ -z "${ANALYSIS_ID}" ]; then
     echo "ERROR: no analysisId available from CE task response"
     echo "$CE_JSON"
@@ -116,7 +112,7 @@ echo "Analysis id: ${ANALYSIS_ID}"
 
 # Query quality gate for the analysis
 QG_JSON=$(curl -s -u "${SONAR_TOKEN}:" "${SONAR_HOST}/api/qualitygates/project_status?analysisId=${ANALYSIS_ID}")
-QG_STATUS=$(echo "$QG_JSON" | sed -n 's/.*"status":"\([^"]*\)".*/\1/p' | head -n1)
+QG_STATUS=$(echo "$QG_JSON" | grep -o '"status":"[^"]*"' | head -n1 | cut -d: -f2 | tr -d '"')
 echo "Quality gate status: ${QG_STATUS}"
 
 if [ "${QG_STATUS}" != "OK" ]; then
