@@ -212,5 +212,87 @@ echo "Docker images pushed successfully!"
                 }
             }
         }
+
+        stage('Deploy with Docker Compose') {
+            steps {
+                echo "Deploying application with Docker Compose..."
+                sh '''#!/bin/bash
+set -euo pipefail
+
+# Stop and remove existing containers if any
+docker-compose down --remove-orphans || true
+
+# Pull latest images and start all services
+export DOCKER_IMAGE=${DOCKER_IMAGE}
+export DOCKER_TAG=${DOCKER_TAG}
+
+docker-compose up -d
+
+# Wait for services to be healthy
+echo "Waiting for services to start..."
+sleep 30
+
+# Check if all containers are running
+echo "=== Container Status ==="
+docker-compose ps
+
+# Verify application health
+APP_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8089/events/actuator/health || echo "000")
+if [ "$APP_HEALTH" = "200" ]; then
+    echo "✓ Spring Boot application is healthy!"
+else
+    echo "⚠ Spring Boot application health check returned: $APP_HEALTH"
+fi
+
+# Verify Prometheus is running
+PROM_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9090/-/healthy || echo "000")
+if [ "$PROM_HEALTH" = "200" ]; then
+    echo "✓ Prometheus is healthy!"
+else
+    echo "⚠ Prometheus health check returned: $PROM_HEALTH"
+fi
+
+# Verify Grafana is running
+GRAFANA_HEALTH=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health || echo "000")
+if [ "$GRAFANA_HEALTH" = "200" ]; then
+    echo "✓ Grafana is healthy!"
+else
+    echo "⚠ Grafana health check returned: $GRAFANA_HEALTH"
+fi
+
+echo ""
+echo "=== Deployment Complete ==="
+echo "Application URL: http://localhost:8089/events"
+echo "Prometheus URL: http://localhost:9090"
+echo "Grafana URL: http://localhost:3000 (admin/admin)"
+echo "cAdvisor URL: http://localhost:8080"
+'''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '''
+=== Pipeline Completed Successfully! ===
+All stages passed. Your application is now deployed with monitoring.
+
+Access points:
+- Application: http://localhost:8089/events
+- Prometheus: http://localhost:9090
+- Grafana: http://localhost:3000 (admin/admin)
+- cAdvisor: http://localhost:8080
+'''
+        }
+        failure {
+            echo 'Pipeline failed! Check the logs for details.'
+        }
+        always {
+            // Clean up workspace but keep docker-compose running
+            cleanWs(cleanWhenNotBuilt: false,
+                    deleteDirs: true,
+                    disableDeferredWipeout: true,
+                    notFailBuild: true)
+        }
     }
 }
