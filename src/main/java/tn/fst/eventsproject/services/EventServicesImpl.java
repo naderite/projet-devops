@@ -117,12 +117,10 @@ public class EventServicesImpl implements IEventServices {
             if (event.getLogistics() == null || event.getLogistics().isEmpty()) {
                 continue;
             }
-
-            else {
-                Set<Logistics> logisticsSet = event.getLogistics();
-                for (Logistics logistics : logisticsSet) {
-                    if (logistics.isReserve())
-                        logisticsList.add(logistics);
+            Set<Logistics> logisticsSet = event.getLogistics();
+            for (Logistics logistics : logisticsSet) {
+                if (logistics.isReserve()) {
+                    logisticsList.add(logistics);
                 }
             }
         }
@@ -141,13 +139,14 @@ public class EventServicesImpl implements IEventServices {
             Set<Logistics> logisticsSet = event.getLogistics();
             if (logisticsSet != null) {
                 for (Logistics logistics : logisticsSet) {
-                    if (logistics.isReserve())
+                    if (logistics.isReserve()) {
                         somme += logistics.getPrixUnit() * logistics.getQuantite();
+                    }
                 }
             }
             event.setCout(somme);
             eventRepository.save(event);
-            log.info("Cout de l'Event " + event.getDescription() + " est " + somme);
+            log.info("Cout de l'Event {} est {}", event.getDescription(), somme);
 
         }
     }
