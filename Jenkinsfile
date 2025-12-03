@@ -1,6 +1,8 @@
 pipeline {
     agent any
-
+  triggers {
+    githubPush()
+  }
     tools {
         // Project uses Spring Boot 3.x and compiles with Java 21 locally.
         // Update this tool name to a JDK installation available in your Jenkins (e.g. 'JDK21').
