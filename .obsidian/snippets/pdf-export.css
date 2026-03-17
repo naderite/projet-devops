@@ -1,0 +1,98 @@
+/* PDF Export Optimization CSS Snippet for Obsidian */
+
+/* Page breaks */
+.page-break {
+    page-break-before: always;
+    break-before: page;
+}
+
+/* Responsive images */
+.img-responsive {
+    max-width: 100% !important;
+    height: auto !important;
+    display: block;
+    margin: 10px auto;
+}
+
+.img-small {
+    max-height: 250px !important;
+}
+
+.img-medium {
+    max-height: 300px !important;
+}
+
+.img-large {
+    max-height: 400px !important;
+}
+
+/* Layout containers */
+.two-column {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 2%;
+}
+
+.two-column>* {
+    flex: 0 0 48%;
+    margin-bottom: 20px;
+}
+
+.three-column {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 1%;
+}
+
+.three-column>* {
+    flex: 0 0 32%;
+    margin-bottom: 20px;
+}
+
+/* Centered content */
+.center {
+    text-align: center;
+    margin: 20px 0;
+}
+
+/* Small tables */
+.table-small {
+    font-size: 11px !important;
+}
+
+.table-medium {
+    font-size: 12px !important;
+}
+
+/* Print optimizations */
+@media print {
+    .page-break {
+        page-break-before: always;
+    }
+
+    .img-responsive {
+        max-width: 100% !important;
+        page-break-inside: avoid;
+    }
+
+    .two-column,
+    .three-column {
+        page-break-inside: avoid;
+    }
+
+    table {
+        page-break-inside: avoid;
+    }
+
+    .callout {
+        page-break-inside: avoid;
+    }
+}
+
+/* Mermaid diagram sizing */
+.mermaid {
+    max-width: 600px;
+    margin: 0 auto;
+}
